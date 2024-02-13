@@ -42,3 +42,7 @@ body {
     transform: rotate(360deg);
   }
 }
+
+input[type="text"] {
+  border-radius: 15px '!important';
+}

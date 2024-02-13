@@ -58,7 +58,7 @@ const Header = () => {
   return (
     <AppBar position="static" elevation={1} sx={{background: 'transparent', color: 'white', mt:'5px'}}>
       <Toolbar>
-        <Box display="flex" justifyContent="space-between" width="100%" alignItems="center" sx={{background: 'linear-gradient(45deg, #00ff96, #7919ff)', borderRadius: '10px', padding: '5px 8px' }}>
+        <Box display="flex" justifyContent="space-between" width="100%" alignItems="center" sx={{background: 'mediumpurple', borderRadius: '10px', padding: '5px 8px' }}>
           <Typography variant="h6">
             My DApp
           </Typography>
@@ -74,7 +74,7 @@ const Header = () => {
             {walletAddress ? (
               <ConnectButton color="inherit" onClick={disconnectWallet} sx={{backgroundColor: 'crimson'}}>Disconnect</ConnectButton>
             ) : (
-              <ConnectButton color="inherit" onClick={connectWallet} sx={{backgroundColor: '#512da8'}}>Connect</ConnectButton>
+              <ConnectButton color="inherit" onClick={connectWallet} sx={{background: 'linear-gradient(45deg, #05e3ff, #7919ff)'}}>Connect</ConnectButton>
             )}
           </Box>
         </Box>

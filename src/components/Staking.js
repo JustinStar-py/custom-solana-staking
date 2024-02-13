@@ -6,7 +6,7 @@ import { createTheme, ThemeProvider, styled } from '@mui/material/styles';
 const StyledPaper = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(3),
   borderRadius: '10px',
-  boxShadow: '0px 2px 1px -1px rgb(255 255 255 / 60%), 0px 1px 14px 0px rgb(255 255 255 / 60%), 0px 1px 3px 0px rgb(255 255 255 / 60%)',
+  boxShadow: '0px 2px 1px -1px rgb(255 255 255 / 40%), 0px 1px 14px 0px rgb(255 255 255 / 40%), 0px 1px 3px 0px rgb(255 255 255 / 40%)',
   transition: 'box-shadow 0.3s ease',
   '&:hover': {
     boxShadow: '0px 2px 1px -1px rgb(255 255 255 / 85%), 0px 1px 14px 0px rgb(255 255 255 / 85%), 0px 1px 3px 0px rgb(255 255 255 / 85%)',
@@ -51,7 +51,7 @@ const Staking = () => {
               </Typography>
               <TextField fullWidth label="Amount to Stake" type="number" margin="normal" sx={{ borderRadius: '15px' }} />
               <Box sx={{ justifyContent: 'space-between', mt: 2 }}>
-                <AppButton variant="contained" color="primary" sx={{mt:'5px', width: '100%', background: 'linear-gradient(45deg, #00ff96, #7919ff)'}}>
+                <AppButton variant="contained" color="primary" sx={{mt:'5px', width: '100%', background: 'linear-gradient(45deg, #00ff96, #6B64EF)'}}>
                   Stake
                 </AppButton>
                 <AppButton variant="contained" color="secondary" sx={{mt:'5px', width: '100%', background: '#512da8'}}>
