@@ -1,6 +1,11 @@
 .App {
   text-align: center;
-  background-color: gainsboro;
+  overflow: hidden;
+  background: linear-gradient(179deg, #00102c, #1F0B3A, #050B1C, black, #000816);
+}
+
+body {
+  overflow: hidden;
 }
 
 .App-logo {

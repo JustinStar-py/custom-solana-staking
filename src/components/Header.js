@@ -23,9 +23,9 @@ const ConnectButton = styled(Button)(({ theme }) => ({
     borderRadius: '4px',
     textTransform: 'Uppercase',
     borderRadius: '10px',
-    boxShadow: '-3px 3px 1px gray',
+    boxShadow: '-3px 3px 1px rgb(81 45 168 / 13%)',
     '&:hover': {
-      boxShadow: '-2px 2px 1px rgba(0, 0, 0, 0.3)',
+      boxShadow: '-2px 2px 1px rgb(81 45 168 / 1%)',
     },
 }));
 
@@ -56,9 +56,9 @@ const Header = () => {
   };
 
   return (
-    <AppBar position="static" color="default" elevation={1}>
+    <AppBar position="static" elevation={1} sx={{background: 'transparent', color: 'white', mt:'5px'}}>
       <Toolbar>
-        <Box display="flex" justifyContent="space-between" width="100%" alignItems="center">
+        <Box display="flex" justifyContent="space-between" width="100%" alignItems="center" sx={{background: 'linear-gradient(45deg, #00ff96, #7919ff)', borderRadius: '10px', padding: '5px 8px' }}>
           <Typography variant="h6">
             My DApp
           </Typography>
