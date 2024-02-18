@@ -1,11 +1,19 @@
+/*  import font */
+@font-face {
+  font-family: 'Newake';
+  src: url('./fonts/Newake.otf');
+}
+
 .App {
   text-align: center;
   overflow: hidden;
-  background: linear-gradient(179deg, #00102c, #1F0B3A, #050B1C, black, #000816);
+  background: url("https://wagmi-sol.tech/images/hero-bg-2.png");
+  /* background: linear-gradient(0deg, #00102c, #1F0B3A, #050B1C, black, #000816);  */
 }
 
 body {
   overflow: hidden;
+  background: linear-gradient(0deg, #00102c, #1F0B3A, #050B1C, black, #1F0B3A);
 }
 
 .App-logo {
