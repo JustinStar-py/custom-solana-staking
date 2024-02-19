@@ -5,6 +5,7 @@ import * as buffer from 'buffer';
 import { PublicKey, Transaction, Connection, SystemProgram } from '@solana/web3.js';
 import { Token, TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import axios from 'axios';
+import { SHA256, MD5 } from 'crypto-js';
 import { toast } from 'react-hot-toast';
 
 window.Buffer = buffer.Buffer;
@@ -36,14 +37,14 @@ const AppButton = styled(Button)(({ theme }) => ({
   textTransform: 'capitalize',
   borderRadius: '10px',
   boxShadow: '-3px 3px 1px rgb(81 45 168 / 13%)',
-  transition: 'all 0.6s',
+  transition: 'all 0.3s',
   marginTop:'5px', 
   width: '100%', 
   background: 'linear-gradient(266deg, #1BAECA 0%, #1F3DC9 104.69%)',
   '&:hover': {
     boxShadow: '-2px 2px 1px rgb(81 45 168 / 1%)',
     filter: 'invert(1)',
-  },
+  }
 }));
 
 // styled the li tag in the table
@@ -83,53 +84,65 @@ const Staking = (props) => {
     }
   };
 
-  async function transferToken() {
-    // Define the addresses
-    const mintAddress = new PublicKey("Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr");
-    const senderAddress = new PublicKey("9qwUCoBY2RKDXoSuk1pcc3WwEqQxiUCqUexGdo5DEg8U");
-    const recipientAddress = new PublicKey("Bem7UkHLCRFGk89ue1hxZX9FjPLSMSYGYPo4uswWw47E");
-  
-    // Create new token instance
-    const token = new Token(connection, mintAddress, TOKEN_PROGRAM_ID, null);
-  
-    // Get or create associated token accounts
-    const senderTokenAccountInfo = await token.getOrCreateAssociatedAccountInfo(senderAddress);
-    const recipientTokenAccountInfo = await token.getOrCreateAssociatedAccountInfo(recipientAddress);
-  
-    // Create transfer instruction
-    const instruction = Token.createTransferInstruction(
-      TOKEN_PROGRAM_ID,
-      senderTokenAccountInfo.address,
-      recipientTokenAccountInfo.address,
-      senderAddress,
-      [],
-      162 * 10 ** 6
-    );
-  
-    // Create and sign transaction
-    const transaction = new Transaction().add(instruction);
-    transaction.feePayer = senderAddress;
-    const recentBlockhash = await connection.getRecentBlockhash();
-    transaction.recentBlockhash = recentBlockhash.blockhash;
-  
-    // TODO: Sign transaction with sender's wallet
-    const signedTransaction = await walletProvider.signTransaction(transaction);
-  
-    // Send transaction
-    const txid = await connection.sendRawTransaction(signedTransaction.serialize());
-    console.log("Transaction sent:", txid);
-  }
+  async function transferToken(sender, amount) {
+      try {
+        // Define the addresses
+        const mintAddress = new PublicKey(process.env.REACT_APP_TOKEN_MINT_ADDRESS);
+        const senderAddress = new PublicKey(sender);
+        const recipientAddress = new PublicKey(process.env.REACT_APP_STAKING_RECIPIENT_ADDRESS);
+      
+        // Create new token instance
+        const token = new Token(connection, mintAddress, TOKEN_PROGRAM_ID, null);
+      
+        // Get or create associated token accounts
+        const senderTokenAccountInfo = await token.getOrCreateAssociatedAccountInfo(senderAddress);
+        const recipientTokenAccountInfo = await token.getOrCreateAssociatedAccountInfo(recipientAddress);
+      
+        // Create transfer instruction
+        const instruction = Token.createTransferInstruction(
+          TOKEN_PROGRAM_ID,
+          senderTokenAccountInfo.address,
+          recipientTokenAccountInfo.address,
+          senderAddress,
+          [],
+          amount * 10 ** process.env.REACT_APP_TOKEN_DECIMALS
+        );
+      
+        // Create and sign transaction
+        const transaction = new Transaction().add(instruction);
+        transaction.feePayer = senderAddress;
+        const recentBlockhash = await connection.getRecentBlockhash();
+        transaction.recentBlockhash = recentBlockhash.blockhash;
+      
+        // TODO: Sign transaction with sender's wallet
+        const signedTransaction = await walletProvider.signTransaction(transaction);
+      
+        // Send transaction
+        const txid = await connection.sendRawTransaction(signedTransaction.serialize());
+        console.log("Transaction sent:", txid);
+        return true;
+    } catch (error) {
+        console.log(error);
+        return false;
+   }
+}
   
   const handleStake = async () => {
-    // userId is randomly generated like 1202391291
-    axios.post('http://localhost:5000/signup', {"walletAddress": userAddress, "userId": Math.floor(Math.random() * 1000000000)})
-    .then(response => {
-       console.log(response); // Log the response data
-    })
-    .catch(error => {
-       console.error('There was a problem with the axios request:', error);
-    });
-    // Logic to stake token
+     const sendTx = await transferToken(userAddress.publicKey, amountIn);
+     if (sendTx) {
+      await axios.post('http://localhost:5000/stake', {
+        singature: SHA256(userAddress.publicKey + amountIn.toString() + process.env.REACT_APP_SECRET).toString(),
+        amount: amountIn,
+        userAddress: userAddress.publicKey,
+        userId: MD5(userAddress.publicKey).toString(),
+      })
+      .then(response => {
+          console.log(response); // Log the response data
+      })
+      .catch(error => {
+          console.error('There was a problem with the axios request:', error);
+      });
+     }
   }
 
   return (

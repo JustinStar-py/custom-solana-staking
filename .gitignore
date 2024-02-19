@@ -3,6 +3,7 @@
 # dependencies
 /node_modules
 /server/node_modules
+/server/firebase-adminsdk.json
 /server/.env
 /server/.env.local
 /.pnp

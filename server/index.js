@@ -1,13 +1,15 @@
 // server/index.js
+require("dotenv").config();
 const express = require("express");
 const admin = require("firebase-admin");
 const cors = require("cors");
+const crypto = require("crypto");
 const PORT = process.env.PORT || 5000;
 const app = express();
 
 // Middleware
 app.use(express.json());
-app.use(cors({origin: "http://localhost:3000", credentials: true}));
+app.use(cors({ origin: "http://localhost:3000", credentials: true }));
 
 // Initialize Firebase
 var serviceAccount = require("./firebase-adminsdk.json");
@@ -22,7 +24,6 @@ const db = admin.database();
 // Sign up a new user
 app.post('/signup', (req, res) => {
     const { walletAddress, userId } = req.body;
-   console.log(req.body);
     // Here 'users' is assumed to be the collection where user data is being stored.
     const userRef = admin.database().ref(`users/${userId}`);
     userRef.once('value')
@@ -56,10 +57,33 @@ app.post('/signup', (req, res) => {
       });
   });  
 
-app.get("/stake", (req, res) => {
-    console.log("here")
-    res.json({ message: "Hello from server!" });
+app.post("/stake", (req, res) => {
+    const { singature, amount, userAddress, userId } = req.body;
+
+    // Concatenate the user address, amount, and secret
+    const dataToHash = userAddress + amount.toString() + process.env.SECRET;
+
+    // Create a hash using SHA256 algorithm
+    const hash = crypto.createHash('sha256').update(dataToHash).digest('hex');
+
+    if (hash === singature) {
+        // Update the user's total staked amount
+        const userRef = admin.database().ref(`users/${userId}`);
+        userRef.once('value')
+        .then(snapshot => {
+          if (snapshot.exists()) {
+             const existingData = snapshot.val();
+             const totalStaked = Number(existingData.totalStaked) + Number(amount);
+             userRef.update({ totalStaked });
+             return res.status(200).json({ totalStaked });
+            }
+          });
+    }
 });
+
+app.get("/test", (req, res) => {
+    res.json({ message: "Hello, World!" });
+})
 
 app.listen(PORT, () => {
     console.log(`Server listening on ${PORT}`);
