@@ -71,6 +71,17 @@ const Staking = (props) => {
   const { userAddress, walletProvider, connection } = props;
   const [amountIn, setAmountIn] = useState(0);
   const [sending, setSending] = useState(false);
+  const [stakingData, setStakingData] = useState(null);
+
+  useEffect(() => {
+    if (userAddress) {
+      axios.get('http://localhost:5000/user/' + MD5(userAddress.publicKey).toString())
+      .then(response => {
+          setStakingData(response.data);
+          console.log(response.data); // Log the response data
+      })
+    }
+  } , [userAddress]);
 
   const getProvider = async () => {
     if ("solana" in window) {
@@ -188,8 +199,8 @@ const Staking = (props) => {
                   <TableBody>
                     <StyledTableRow>
                       <StyledTableCell>$Wagmi</StyledTableCell>
-                      <StyledTableCell align="right">0 Coin</StyledTableCell>
-                      <StyledTableCell align="right">0 Coin</StyledTableCell>
+                      <StyledTableCell align="right">{stakingData? stakingData.totalStaked : 'loading'}</StyledTableCell>
+                      <StyledTableCell align="right">{stakingData? stakingData.claimableTokens : 'loading'}</StyledTableCell>
                     </StyledTableRow>
                   </TableBody>
                 </Table>

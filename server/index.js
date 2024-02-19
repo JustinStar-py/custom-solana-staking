@@ -23,7 +23,21 @@ const db = admin.database();
 
 // Sign up a new user
 app.post('/signup', (req, res) => {
-    const { walletAddress, userId } = req.body;
+    const { walletAddress, userId, pool } = req.body;
+    let stakingPool = {};
+    
+    switch (pool) {
+      case 1:
+        stakingPool = { apy: 10, lookDuration: 1 };
+        break;
+      case 2:
+        stakingPool = { apy: 35, lookDuration: 3 };
+        break;
+      case 3:
+        stakingPool = { apy: 45, lookDuration: 7 };
+        break;
+    }
+
     // Here 'users' is assumed to be the collection where user data is being stored.
     const userRef = admin.database().ref(`users/${userId}`);
     userRef.once('value')
@@ -36,10 +50,11 @@ app.post('/signup', (req, res) => {
           userRef.set({ 
             userId: userId, 
             walletAddress: walletAddress,
+            stakingPool: stakingPool,
             totalStaked: 0,
             claimableTokens: 0,
             stakingStartDate: null,
-            stakingDuration: 0,
+            stakingDuration: stakingPool.lookDuration,
             stakingRewards: null
           })
             .then(() => {
@@ -80,6 +95,17 @@ app.post("/stake", (req, res) => {
           });
     }
 });
+
+app.get("/user/:userId", (req, res) => {
+    const { userId } = req.params;
+    const userRef = admin.database().ref(`users/${userId}`);
+    userRef.once('value')
+    .then(snapshot => {
+      if (snapshot.exists()) {
+        return res.status(200).json({ ...snapshot.val() });
+      }
+    });
+})
 
 app.get("/test", (req, res) => {
     res.json({ message: "Hello, World!" });
