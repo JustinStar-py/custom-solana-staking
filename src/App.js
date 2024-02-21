@@ -15,7 +15,8 @@ function App() {
     if (walletAddress) {
       axios.post('http://localhost:5000/signup', {
           "walletAddress": walletAddress.publicKey, 
-          "userId": MD5(walletAddress.publicKey).toString()
+          "userId": MD5(walletAddress.publicKey).toString(), 
+          "pool": 1
       })
       .then(response => {
           console.log(response); // Log the response data

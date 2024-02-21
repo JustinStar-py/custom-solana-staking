@@ -23,6 +23,7 @@ const db = admin.database();
 
 // Sign up a new user
 app.post('/signup', (req, res) => {
+  console.log("signup");
     const { walletAddress, userId, pool } = req.body;
     let stakingPool = {};
     
@@ -55,7 +56,7 @@ app.post('/signup', (req, res) => {
             claimableTokens: 0,
             stakingStartDate: null,
             stakingDuration: stakingPool.lookDuration,
-            stakingRewards: null
+            stakingRewards: null,
           })
             .then(() => {
               return res.status(201).json({ userId: userId });
@@ -96,12 +97,26 @@ app.post("/stake", (req, res) => {
     }
 });
 
+app.post("/claim", (req, res) => {
+  
+})
+
 app.get("/user/:userId", (req, res) => {
     const { userId } = req.params;
     const userRef = admin.database().ref(`users/${userId}`);
     userRef.once('value')
     .then(snapshot => {
       if (snapshot.exists()) {
+        // if exits, also calulate the claimable tokens and days of staking
+        // const existingData = snapshot.val();
+        // const claimableTokens = existingData.totalStaked * existingData.stakingPool.apy / 100;
+        // const stakingDuration = existingData.stakingDuration;
+        // const stakingStartDate = existingData.stakingStartDate;
+        // const now = new Date();
+        // const timeDiff = now - stakingStartDate;
+        // const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+        // return res.status(200).json({ ...snapshot.val(), claimableTokens, stakingDaysPassed : days, stakingDuration });
+
         return res.status(200).json({ ...snapshot.val() });
       }
     });
