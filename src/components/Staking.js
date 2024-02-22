@@ -199,8 +199,8 @@ const Staking = (props) => {
                   <TableBody>
                     <StyledTableRow>
                       <StyledTableCell>$Wagmi</StyledTableCell>
-                      <StyledTableCell align="right">{stakingData? stakingData.totalStaked : 'loading'}</StyledTableCell>
-                      <StyledTableCell align="right">{stakingData? stakingData.claimableTokens : 'loading'}</StyledTableCell>
+                      <StyledTableCell align="right">{stakingData? parseFloat(stakingData.totalStaked).toFixed(2) : 'loading'}</StyledTableCell>
+                      <StyledTableCell align="right">{stakingData? parseFloat(stakingData.claimableTokens).toFixed(2) : 'loading'}</StyledTableCell>
                     </StyledTableRow>
                   </TableBody>
                 </Table>

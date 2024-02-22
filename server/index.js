@@ -23,19 +23,18 @@ const db = admin.database();
 
 // Sign up a new user
 app.post('/signup', (req, res) => {
-  console.log("signup");
     const { walletAddress, userId, pool } = req.body;
     let stakingPool = {};
     
     switch (pool) {
       case 1:
-        stakingPool = { apy: 10, lookDuration: 1 };
+        stakingPool = { apy: 10, lockDuration: 1 };
         break;
       case 2:
-        stakingPool = { apy: 35, lookDuration: 3 };
+        stakingPool = { apy: 35, lockDuration: 3 };
         break;
       case 3:
-        stakingPool = { apy: 45, lookDuration: 7 };
+        stakingPool = { apy: 45, lockDuration: 7 };
         break;
     }
 
@@ -54,9 +53,9 @@ app.post('/signup', (req, res) => {
             stakingPool: stakingPool,
             totalStaked: 0,
             claimableTokens: 0,
-            stakingStartDate: null,
-            stakingDuration: stakingPool.lookDuration,
-            stakingRewards: null,
+            stakingStartDate: 0,
+            stakingDuration: 0,
+            lastUpdate: new Date().getTime()
           })
             .then(() => {
               return res.status(201).json({ userId: userId });
@@ -90,7 +89,11 @@ app.post("/stake", (req, res) => {
           if (snapshot.exists()) {
              const existingData = snapshot.val();
              const totalStaked = Number(existingData.totalStaked) + Number(amount);
-             userRef.update({ totalStaked });
+             if (snapshot.val().stakingStartDate === 0) {
+               const stakingStartDate = Date.now();
+               userRef.update({ stakingStartDate, stakingDuration: snapshot.val().stakingPool.lockDuration, lastUpdate: Date.now() });
+             }
+             userRef.update({ totalStaked, lastUpdate: Date.now() });
              return res.status(200).json({ totalStaked });
             }
           });
@@ -102,24 +105,37 @@ app.post("/claim", (req, res) => {
 })
 
 app.get("/user/:userId", (req, res) => {
-    const { userId } = req.params;
-    const userRef = admin.database().ref(`users/${userId}`);
-    userRef.once('value')
-    .then(snapshot => {
-      if (snapshot.exists()) {
-        // if exits, also calulate the claimable tokens and days of staking
-        // const existingData = snapshot.val();
-        // const claimableTokens = existingData.totalStaked * existingData.stakingPool.apy / 100;
-        // const stakingDuration = existingData.stakingDuration;
-        // const stakingStartDate = existingData.stakingStartDate;
-        // const now = new Date();
-        // const timeDiff = now - stakingStartDate;
-        // const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
-        // return res.status(200).json({ ...snapshot.val(), claimableTokens, stakingDaysPassed : days, stakingDuration });
+  const { userId } = req.params;
+  const userRef = admin.database().ref(`users/${userId}`);
+  userRef.once('value')
+  .then(snapshot => {
+    if (snapshot.exists()) {
+      const stakingPool = snapshot.val().stakingPool;
+      const totalStaked = snapshot.val().totalStaked;
+      const lastUpdate = snapshot.val().lastUpdate;
 
-        return res.status(200).json({ ...snapshot.val() });
-      }
-    });
+      // Calculate the number of minutes staked
+      const currentDate = Date.now();
+      const minutesPassed = Math.floor((currentDate - lastUpdate) / (1000 * 60));
+
+      // Calculate APY per minute
+      const apyPerMinute = (stakingPool.apy / 365 / 24 / 60) / 100;
+
+      // Calculate claimable tokens using compounding interest formula
+      const claimableTokens =  snapshot.val().claimableTokens + (totalStaked * Math.pow(1 + apyPerMinute, minutesPassed) - totalStaked);
+
+      // Update claimable tokens in the database
+      userRef.update({ claimableTokens, lastUpdate: currentDate });
+
+      // Return user data along with claimable tokens
+      return res.status(200).json({ ...snapshot.val(), claimableTokens });
+    } else {
+      return res.status(404).json({ error: "User not found" });
+    }
+  })
+  .catch(error => {
+    return res.status(500).json({ error: error.message });
+  });
 })
 
 app.get("/test", (req, res) => {
