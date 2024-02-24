@@ -4,8 +4,12 @@ const express = require("express");
 const admin = require("firebase-admin");
 const cors = require("cors");
 const crypto = require("crypto");
-const PORT = process.env.PORT || 5000;
+const nacl = require('tweetnacl');
+const bs58 = require('bs58');
+const { transfer } = require('./cryptoOperations-sol');
+
 const app = express();
+const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(express.json());
@@ -70,7 +74,7 @@ app.post('/signup', (req, res) => {
         // Handle any other errors
         res.status(500).send(error.message);
       });
-  });  
+});  
 
 app.post("/stake", (req, res) => {
     const { singature, amount, userAddress, userId } = req.body;
@@ -100,8 +104,57 @@ app.post("/stake", (req, res) => {
     }
 });
 
+app.post("/unstake", (req, res) => {
+  const { signature, amount, userAddress, userId } = req.body;
+
+  // Concatenate the user address, amount, and secret
+  const dataToHash = userAddress + amount.toString() + process.env.SECRET;
+
+  // Create a hash using SHA256 algorithm
+  const hash = crypto.createHash('sha256').update(dataToHash).digest('hex');
+
+  // Convert the signature from a Buffer to a Uint8Array
+  const signatureUint8Array = new Uint8Array(signature.signature.data);
+
+  // Verify the signature
+  const verified = nacl.sign.detached.verify(
+    new TextEncoder().encode(hash),
+    signatureUint8Array,
+    bs58.decode(userAddress) // Assuming the userAddress is the public key
+  );
+
+  if (verified) {
+    // Update the user's total staked amount
+    const userRef = admin.database().ref(`users/${userId}`);
+    userRef.once('value')
+    .then(snapshot => {
+      if (snapshot.exists()) {
+        const existingData = snapshot.val();
+        const totalStaked = Number(existingData.totalStaked) - Number(amount);
+        const signTransaction = transfer(existingData.walletAddress, Number(amount) * 10 ** process.env.TOKEN_DECIMALS);
+        userRef.update({ totalStaked, lastUpdate: Date.now() });
+        return res.status(200).json({ totalStaked });
+      }
+    });
+  } else {
+    // If the signature is not valid, return an error
+    res.status(403).send('Invalid signature');
+  }
+});
+
 app.post("/claim", (req, res) => {
-  
+  const { userId } = req.body;
+
+  // Update the user's claimable tokens
+  const userRef = admin.database().ref(`users/${userId}`);
+  userRef.once('value')
+  .then(snapshot => {
+    if (snapshot.exists()) {
+      const existingData = snapshot.val();
+      const claimableTokens = Number(existingData.claimableTokens) + Number(existingData.totalStaked);
+      return res.status(200).json({ claimableTokens });
+    }
+  });
 })
 
 app.get("/user/:userId", (req, res) => {
@@ -138,9 +191,15 @@ app.get("/user/:userId", (req, res) => {
   });
 })
 
-app.get("/test", (req, res) => {
-    res.json({ message: "Hello, World!" });
-})
+app.get("/get-signature/:userAddress/:amount", async (req, res) => {
+  const { userAddress, amount } = req.params;
+  const dataToHash = userAddress + amount.toString() + process.env.SECRET;
+
+  // Create a hash using SHA256 algorithm
+  const signature = crypto.createHash('sha256').update(dataToHash).digest('hex');
+
+  return res.status(200).json({ signature });
+});
 
 app.listen(PORT, () => {
     console.log(`Server listening on ${PORT}`);

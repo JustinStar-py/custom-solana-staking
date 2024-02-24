@@ -10,6 +10,8 @@ import { toast } from 'react-hot-toast';
 
 window.Buffer = buffer.Buffer;
 
+const ENDPOINT = "http://localhost:5000"
+
 // Custom Paper component with Uniswap/PancakeSwap styling
 const StyledPaper = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(3),
@@ -75,7 +77,7 @@ const Staking = (props) => {
 
   useEffect(() => {
     if (userAddress) {
-      axios.get('http://localhost:5000/user/' + MD5(userAddress.publicKey).toString())
+      axios.get(ENDPOINT + '/user/' + MD5(userAddress.publicKey).toString())
       .then(response => {
           setStakingData(response.data);
           console.log(response.data); // Log the response data
@@ -101,7 +103,7 @@ const Staking = (props) => {
         const mintAddress = new PublicKey(process.env.REACT_APP_TOKEN_MINT_ADDRESS);
         const senderAddress = new PublicKey(sender);
         const recipientAddress = new PublicKey(process.env.REACT_APP_STAKING_RECIPIENT_ADDRESS);
-      
+
         // Create new token instance
         const token = new Token(connection, mintAddress, TOKEN_PROGRAM_ID, null);
       
@@ -140,9 +142,11 @@ const Staking = (props) => {
   
   const handleStake = async () => {
      const sendTx = await transferToken(userAddress.publicKey, amountIn);
+     const signature = await (await axios.get(ENDPOINT + `/get-signature/${userAddress.publicKey}/${amountIn}`)).data.signature;
+     
      if (sendTx) {
-      await axios.post('http://localhost:5000/stake', {
-        singature: SHA256(userAddress.publicKey + amountIn.toString() + process.env.REACT_APP_SECRET).toString(),
+      await axios.post(ENDPOINT + '/stake', {
+        singature: signature,
         amount: amountIn,
         userAddress: userAddress.publicKey,
         userId: MD5(userAddress.publicKey).toString(),
@@ -154,6 +158,30 @@ const Staking = (props) => {
           console.error('There was a problem with the axios request:', error);
       });
      }
+  }
+
+  const handleUnstake = async () => {
+    const message = await (await axios.get(ENDPOINT + `/get-signature/${userAddress.publicKey}/${amountIn}`)).data.signature;
+
+    const encodedMessage = new TextEncoder().encode(message);
+
+    const signedMessage = await window.solana.request({
+      method: 'signMessage',
+      params: {
+        message: encodedMessage,
+        display: 'utf8',
+      },
+    });
+    
+    // Send the signed message to the backend
+    axios.post(ENDPOINT + '/unstake', {
+      signature: signedMessage,
+      amount: amountIn,
+      userAddress: userAddress.publicKey,
+      userId: MD5(userAddress.publicKey).toString(),
+    }).then(response => {
+        console.log(response); // Log the response data
+    })
   }
 
   return (
@@ -172,7 +200,7 @@ const Staking = (props) => {
                 <AppButton variant="contained" color="primary" onClick={handleStake}>
                   Stake
                 </AppButton>
-                <AppButton variant="contained" color="secondary" onClick={transferToken}>
+                <AppButton variant="contained" color="secondary" onClick={handleUnstake}>
                   Unstake
                 </AppButton>
               </Box>
