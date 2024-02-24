@@ -99,7 +99,7 @@ const Staking = (props) => {
 
   async function transferToken(sender, amount) {
       try {
-        // Define the addresses
+        // Define the addressesz
         const mintAddress = new PublicKey(process.env.REACT_APP_TOKEN_MINT_ADDRESS);
         const senderAddress = new PublicKey(sender);
         const recipientAddress = new PublicKey(process.env.REACT_APP_STAKING_RECIPIENT_ADDRESS);
@@ -143,7 +143,7 @@ const Staking = (props) => {
   const handleStake = async () => {
      const sendTx = await transferToken(userAddress.publicKey, amountIn);
      const signature = await (await axios.get(ENDPOINT + `/get-signature/${userAddress.publicKey}/${amountIn}`)).data.signature;
-     
+
      if (sendTx) {
       await axios.post(ENDPOINT + '/stake', {
         singature: signature,

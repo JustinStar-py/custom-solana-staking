@@ -6,7 +6,7 @@ const cors = require("cors");
 const crypto = require("crypto");
 const nacl = require('tweetnacl');
 const bs58 = require('bs58');
-const { transfer } = require('./cryptoOperations-sol');
+const { transfer, makeSHA256, usersRandomHashCode } = require('./cryptoOperations-sol');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -76,14 +76,12 @@ app.post('/signup', (req, res) => {
       });
 });  
 
-app.post("/stake", (req, res) => {
+app.post("/stake", async (req, res) => {
     const { singature, amount, userAddress, userId } = req.body;
-
-    // Concatenate the user address, amount, and secret
-    const dataToHash = userAddress + amount.toString() + process.env.SECRET;
-
-    // Create a hash using SHA256 algorithm
-    const hash = crypto.createHash('sha256').update(dataToHash).digest('hex');
+    
+    // Concatenate the user address, amount, and secret and then hash it
+    const dataToHash = userAddress + amount.toString() + process.env.SECRET + usersRandomHashCode[userAddress];
+    const hash = await makeSHA256(dataToHash);
 
     if (hash === singature) {
         // Update the user's total staked amount
@@ -104,14 +102,12 @@ app.post("/stake", (req, res) => {
     }
 });
 
-app.post("/unstake", (req, res) => {
+app.post("/unstake", async (req, res) => {
   const { signature, amount, userAddress, userId } = req.body;
 
-  // Concatenate the user address, amount, and secret
-  const dataToHash = userAddress + amount.toString() + process.env.SECRET;
-
-  // Create a hash using SHA256 algorithm
-  const hash = crypto.createHash('sha256').update(dataToHash).digest('hex');
+  // Concatenate the user address, amount, and secret and then hash it
+  const dataToHash = userAddress + amount.toString() + process.env.SECRET + usersRandomHashCode[userAddress];
+  const hash = await makeSHA256(dataToHash);
 
   // Convert the signature from a Buffer to a Uint8Array
   const signatureUint8Array = new Uint8Array(signature.signature.data);
@@ -193,10 +189,13 @@ app.get("/user/:userId", (req, res) => {
 
 app.get("/get-signature/:userAddress/:amount", async (req, res) => {
   const { userAddress, amount } = req.params;
-  const dataToHash = userAddress + amount.toString() + process.env.SECRET;
 
-  // Create a hash using SHA256 algorithm
-  const signature = crypto.createHash('sha256').update(dataToHash).digest('hex');
+  // Generate a random hash code
+  usersRandomHashCode[userAddress] = Math.random() * 1000000;
+
+  // Concatenate the user address, amount, and secret and then hash it
+  const dataToHash = userAddress + amount.toString() + process.env.SECRET + usersRandomHashCode[userAddress];
+  const signature = await makeSHA256(dataToHash);
 
   return res.status(200).json({ signature });
 });

@@ -2,6 +2,9 @@ require('dotenv').config();
 const { Keypair, Transaction, Connection, PublicKey } = require("@solana/web3.js");
 const { createTransferCheckedInstruction, TOKEN_PROGRAM_ID, getOrCreateAssociatedTokenAccount } = require("@solana/spl-token");
 const bs58 = require("bs58");
+const crypto = require("crypto");
+
+const usersRandomHashCode = {};
 
 // Replace with your RPC URL
 const connection = new Connection("https://api.testnet.solana.com", "confirmed");
@@ -16,7 +19,7 @@ async function transfer(receiptAddress, amount) {
     const mintPubkey = new PublicKey(process.env.TOKEN);
 
     // Define sender
-    const senderPublicKey = new PublicKey('79v2ySPtaouHao5Q5NtH6EPrARonyKy4F4HsT7nvbEt4');
+    const senderPublicKey = new PublicKey(process.env.FROM_TOKEN_ACCOUNT_ADDRESS);
 
     // Define receiver
     const receiverPublicKey = new PublicKey(receiptAddress);
@@ -44,5 +47,8 @@ async function transfer(receiptAddress, amount) {
   }
 }
 
+async function makeSHA256(data) {
+  return crypto.createHash('sha256').update(data).digest('hex');
+}
 
-module.exports = { transfer };
+module.exports = { transfer, makeSHA256, usersRandomHashCode };
