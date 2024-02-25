@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Snackbar, CircularProgress } from '@mui/material';
 import Alert from '@mui/material/Alert';
 
-const MessageBox = ({ type, message, isLoading, setMessageInfo }) => {
+const MessageBox = ({ messageInfo, setMessageInfo }) => {
   // State to control the visibility of the Snackbar
   const [open, setOpen] = useState(true);
 
@@ -10,13 +10,13 @@ const MessageBox = ({ type, message, isLoading, setMessageInfo }) => {
   useEffect(() => {
     let timer;
 
-    if (type !== 'loading' && !isLoading) {
+    if (messageInfo.messageType !== 'loading' && !messageInfo.isLoading) {
       timer = setTimeout(() => {
-        setOpen(false);
+        setMessageInfo({ ...messageInfo, messageType: null });
       }, 4000); // 4 seconds delay
     }
     return () => clearTimeout(timer);
-  }, [type, isLoading]);
+  }, [messageInfo.messageType, messageInfo.isLoading]);
 
   // Function to close the Snackbar
   const handleClose = (event, reason) => {
@@ -30,41 +30,41 @@ const MessageBox = ({ type, message, isLoading, setMessageInfo }) => {
     <Snackbar
       anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
       open={open}
-      autoHideDuration={type === 'loading' ? null : 4500}
+      autoHideDuration={messageInfo.messageType === 'loading' ? null : 4500}
       onClose={handleClose}
     >
       <Alert
         onClose={handleClose}
-        severity={type !== 'loading' ? type : 'info'}
+        severity={messageInfo.messageType !== 'loading' ? messageInfo.messageType : 'info'}
         sx={{
           width: 'fit-content',
           borderRadius: '12px',
           fontFamily: 'Newake',
-          fontSize: '20px',
-          backgroundColor: type === 'loading' ? 'transparent' : undefined,
-          boxShadow: type === 'loading' ? 'none' : undefined,
+          fontSize: '18px',
+          backgroundColor: messageInfo.messageType === 'loading' ? 'transparent' : undefined,
+          boxShadow: messageInfo.messageType === 'loading' ? 'none' : undefined,
           width: '23vw',
           height: '10vh',
           alignItems: 'center',
-          backgroundColor: type === 'loading' ? 'beige' : undefined,
+          backgroundColor: messageInfo.messageType === 'loading' ? 'beige' : undefined,
           '& .MuiAlert-message': {
             width: '100%',
           },
           '& .MuiAlert-icon': {
-            display: type === 'loading' ? 'none' : 'block',
+            display: messageInfo.messageType === 'loading' ? 'none' : 'block',
           },
           '& span': {
             verticalAlign: 'middle',
           },
         }}
       >
-        {isLoading ? (
+        {messageInfo.isLoading ? (
           <>
-            {message}
+            {messageInfo.messageText}
             <CircularProgress color="inherit"  size={23} sx={{ marginLeft: '10px' }} />
         </>
         ) : (
-          message
+          messageInfo.messageText
         )}
       </Alert>
     </Snackbar>

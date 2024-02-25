@@ -70,7 +70,7 @@ const StyledTableCell = styled(TableCell)(({ theme }) => ({
 
 const Staking = (props) => {
   // State and logic would be added here
-  const { userAddress, walletProvider, connection, setMessageInfo } = props;
+  const { userAddress, walletProvider, connection, messageInfo, setMessageInfo } = props;
   const [amountIn, setAmountIn] = useState(0);
   const [sending, setSending] = useState(false);
   const [stakingData, setStakingData] = useState(null);
@@ -141,7 +141,7 @@ const Staking = (props) => {
 }
   
   const handleStake = async () => {
-     setMessageInfo({ isLoading: true, messageText: 'Processing transaction...', messageType: 'loading'});
+     setMessageInfo({ isLoading: true, messageText: 'Processing stake transaction...', messageType: 'loading'});
      const transactionId = await transferToken(userAddress.publicKey, amountIn);
      const signature = await (await axios.get(ENDPOINT + `/get-signature/${userAddress.publicKey}/${amountIn}`)).data.signature;
 
@@ -168,9 +168,8 @@ const Staking = (props) => {
   }
 
   const handleUnstake = async () => {
-    
+    setMessageInfo({ isLoading: true, messageText: 'Processing unstake transaction...', messageType: 'loading'});
     const message = await (await axios.get(ENDPOINT + `/get-signature/${userAddress.publicKey}/${amountIn}`)).data.signature;
-
     const encodedMessage = new TextEncoder().encode(message);
 
     const signedMessage = await window.solana.request({
@@ -182,13 +181,16 @@ const Staking = (props) => {
     });
     
     // Send the signed message to the backend
+
     axios.post(ENDPOINT + '/unstake', {
       signature: signedMessage,
       amount: amountIn,
       userAddress: userAddress.publicKey,
       userId: MD5(userAddress.publicKey).toString(),
     }).then(response => {
-        console.log(response); // Log the response data
+        setMessageInfo({ isLoading: false, messageText: 'Transaction successful', messageType: 'success' });
+    }).catch(error => {
+        setMessageInfo({ isLoading: false, messageText: 'Transaction failed', messageType: 'error' });
     })
   }
 
@@ -205,10 +207,10 @@ const Staking = (props) => {
               </Typography>
               <TextField fullWidth onChange={(event) => setAmountIn(event.target.value)} label="Amount to Stake" type="number" margin="normal" sx={{ borderRadius: '15px' }} />
               <Box sx={{ justifyContent: 'space-between', mt: 2 }}>
-                <AppButton variant="contained" color="primary" onClick={handleStake}>
+                <AppButton variant="contained" color="primary" onClick={handleStake} disabled={messageInfo.isLoading}>
                   Stake
                 </AppButton>
-                <AppButton variant="contained" color="secondary" onClick={handleUnstake}>
+                <AppButton variant="contained" color="secondary" onClick={handleUnstake} disabled={messageInfo.isLoading}>
                   Unstake
                 </AppButton>
               </Box>

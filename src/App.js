@@ -38,12 +38,11 @@ function App() {
   return (
     <div className="App">
        <Header walletAddress={walletAddress} setWalletAddress={setWalletAddress} setConnection={setConnection} setWalletProvider={setWalletProvider} />
-       <Staking userAddress={walletAddress} walletProvider={walletProvider} connection={connection} setMessageInfo={setMessageInfo} />
+       <Staking userAddress={walletAddress} walletProvider={walletProvider} connection={connection} messageInfo={messageInfo} setMessageInfo={setMessageInfo} />
        {messageInfo.messageType !== null &&
          <MessageBox 
-           type={messageInfo.messageType}
-           message={messageInfo.messageText}
-           isLoading={messageInfo.isLoading}
+           messageInfo={messageInfo}
+           setMessageInfo={setMessageInfo}
          />
        }
     </div>
