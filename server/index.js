@@ -6,7 +6,7 @@ const cors = require("cors");
 const crypto = require("crypto");
 const nacl = require('tweetnacl');
 const bs58 = require('bs58');
-const { transfer, makeSHA256, usersRandomHashCode } = require('./cryptoOperations-sol');
+const { transfer, makeSHA256, connection, usersRandomHashCode } = require('./cryptoOperations-sol');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -77,8 +77,33 @@ app.post('/signup', (req, res) => {
 });  
 
 app.post("/stake", async (req, res) => {
-    const { singature, amount, userAddress, userId } = req.body;
-    
+    const { singature, amount, userAddress, userId, transactionId } = req.body;
+
+    const transaction = await connection.getTransaction(transactionId);
+
+    const sender = await transaction.transaction.message.accountKeys[0].toBase58();
+    const receiver = await transaction.transaction.message.accountKeys[1].toBase58();
+    const transactionToken = await transaction.transaction.message.accountKeys[2].toBase58();
+    const transactionTimestamp = await transaction.blockTime;
+  
+     
+    // the age of the transaction must be less than 5 minutes
+    if (Date.now() / 1000 - transactionTimestamp > 2 * 60) {
+      return res.status(400).json({ error: 'Transaction too old' });
+    }
+
+    // if (transactionToken !== process.env.TOKEN) {
+    //   return res.status(400).json({ error: 'Invalid transaction' });
+    // }
+
+    if (sender !== userAddress) {
+      return res.status(400).json({ error: 'Invalid transaction' });
+    }
+
+    if (receiver !== process.env.FROM_TOKEN_ACCOUNT_ADDRESS) {
+      return res.status(400).json({ error: 'Invalid transaction' });
+    }
+
     // Concatenate the user address, amount, and secret and then hash it
     const dataToHash = userAddress + amount.toString() + process.env.SECRET + usersRandomHashCode[userAddress];
     const hash = await makeSHA256(dataToHash);

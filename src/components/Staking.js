@@ -70,7 +70,7 @@ const StyledTableCell = styled(TableCell)(({ theme }) => ({
 
 const Staking = (props) => {
   // State and logic would be added here
-  const { userAddress, walletProvider, connection } = props;
+  const { userAddress, walletProvider, connection, setMessageInfo } = props;
   const [amountIn, setAmountIn] = useState(0);
   const [sending, setSending] = useState(false);
   const [stakingData, setStakingData] = useState(null);
@@ -132,8 +132,8 @@ const Staking = (props) => {
       
         // Send transaction
         const txid = await connection.sendRawTransaction(signedTransaction.serialize());
-        console.log("Transaction sent:", txid);
-        return true;
+
+        return txid;
     } catch (error) {
         console.log(error);
         return false;
@@ -141,26 +141,34 @@ const Staking = (props) => {
 }
   
   const handleStake = async () => {
-     const sendTx = await transferToken(userAddress.publicKey, amountIn);
+     setMessageInfo({ isLoading: true, messageText: 'Processing transaction...', messageType: 'loading'});
+     const transactionId = await transferToken(userAddress.publicKey, amountIn);
      const signature = await (await axios.get(ENDPOINT + `/get-signature/${userAddress.publicKey}/${amountIn}`)).data.signature;
 
-     if (sendTx) {
+     if (transactionId) {
       await axios.post(ENDPOINT + '/stake', {
         singature: signature,
         amount: amountIn,
         userAddress: userAddress.publicKey,
         userId: MD5(userAddress.publicKey).toString(),
+        transactionId : transactionId
       })
       .then(response => {
           console.log(response); // Log the response data
+          setMessageInfo({ isLoading: false, messageText: 'Transaction successful', messageType: 'success' });
       })
       .catch(error => {
           console.error('There was a problem with the axios request:', error);
+          setMessageInfo({ isLoading: false, messageText: 'Transaction failed', messageType: 'error' });
       });
+     } else {
+        setMessageInfo({ isLoading: false, messageText: 'Transaction failed', messageType: 'error' });
      }
+
   }
 
   const handleUnstake = async () => {
+    
     const message = await (await axios.get(ENDPOINT + `/get-signature/${userAddress.publicKey}/${amountIn}`)).data.signature;
 
     const encodedMessage = new TextEncoder().encode(message);
