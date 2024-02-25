@@ -30,7 +30,7 @@ const MessageBox = ({ messageInfo, setMessageInfo }) => {
     <Snackbar
       anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
       open={open}
-      autoHideDuration={messageInfo.messageType === 'loading' ? null : 4500}
+      autoHideDuration={messageInfo.messageType === 'loading' ? null : 3500}
       onClose={handleClose}
     >
       <Alert

@@ -83,7 +83,7 @@ const Staking = (props) => {
           console.log(response.data); // Log the response data
       })
     }
-  } , [userAddress]);
+  } , [userAddress, messageInfo]);
 
   const getProvider = async () => {
     if ("solana" in window) {
@@ -171,18 +171,55 @@ const Staking = (props) => {
     setMessageInfo({ isLoading: true, messageText: 'Processing unstake transaction...', messageType: 'loading'});
     const message = await (await axios.get(ENDPOINT + `/get-signature/${userAddress.publicKey}/${amountIn}`)).data.signature;
     const encodedMessage = new TextEncoder().encode(message);
+    let signedMessage = null;
 
-    const signedMessage = await window.solana.request({
-      method: 'signMessage',
-      params: {
-        message: encodedMessage,
-        display: 'utf8',
-      },
-    });
+    try {
+      signedMessage = await window.solana.request({
+        method: 'signMessage',
+        params: {
+          message: encodedMessage,
+          display: 'utf8',
+        },
+      });
+    } catch (error) {
+      setMessageInfo({ isLoading: false, messageText: `Error: ${error.message.replace('Error: ', '')}`, messageType: 'error' });
+      return false;
+    }
     
     // Send the signed message to the backend
-
     axios.post(ENDPOINT + '/unstake', {
+      signature: signedMessage,
+      amount: amountIn,
+      userAddress: userAddress.publicKey,
+      userId: MD5(userAddress.publicKey).toString(),
+    }).then(response => {
+        setMessageInfo({ isLoading: false, messageText: 'Transaction successful', messageType: 'success' });
+    }).catch(error => {
+        setMessageInfo({ isLoading: false, messageText: `Error: ${error.message.replace('Error: ', '')}`, messageType: 'error' });
+    })
+  }
+
+  const handleClaim = async () => {
+    setMessageInfo({ isLoading: true, messageText: 'Processing unstake transaction...', messageType: 'loading'});
+    const message = await (await axios.get(ENDPOINT + `/get-signature/${userAddress.publicKey}/${amountIn}`)).data.signature;
+    const encodedMessage = new TextEncoder().encode(message);
+    let signedMessage = null;
+
+    try {
+      signedMessage = await window.solana.request({
+        method: 'signMessage',
+        params: {
+          message: encodedMessage,
+          display: 'utf8',
+        },
+      });
+    } catch (error) {
+      setMessageInfo({ isLoading: false, messageText: `Error: ${error.message.replace('Error: ', '')}`, messageType: 'error' });
+      return false;
+    }
+
+    // Send the signed message to the backend
+    axios.post(ENDPOINT + '/claim', {
       signature: signedMessage,
       amount: amountIn,
       userAddress: userAddress.publicKey,
@@ -242,6 +279,9 @@ const Staking = (props) => {
                     </StyledTableRow>
                   </TableBody>
                 </Table>
+                <AppButton variant="contained" color="secondary" onClick={handleClaim} disabled={messageInfo.isLoading} sx={{ width: '100%', mt: 2, background: 'linear-gradient(266deg, #00c2da 0%, #00ff43 104.69%)', }}>
+                    Claim Rewards
+                </AppButton>
               </TableContainer>
             </StyledPaper>
           </Grid>

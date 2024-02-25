@@ -163,19 +163,40 @@ app.post("/unstake", async (req, res) => {
   }
 });
 
-app.post("/claim", (req, res) => {
-  const { userId } = req.body;
+app.post("/claim", async (req, res) => {
+  const { signature, amount, userAddress, userId } = req.body;
 
-  // Update the user's claimable tokens
-  const userRef = admin.database().ref(`users/${userId}`);
-  userRef.once('value')
-  .then(snapshot => {
-    if (snapshot.exists()) {
-      const existingData = snapshot.val();
-      const claimableTokens = Number(existingData.claimableTokens) + Number(existingData.totalStaked);
-      return res.status(200).json({ claimableTokens });
-    }
-  });
+  // Concatenate the user address, amount, and secret and then hash it
+  const dataToHash = userAddress + amount.toString() + process.env.SECRET + usersRandomHashCode[userAddress];
+  const hash = await makeSHA256(dataToHash);
+
+  // Convert the signature from a Buffer to a Uint8Array
+  const signatureUint8Array = new Uint8Array(signature.signature.data);
+
+  // Verify the signature
+  const verified = nacl.sign.detached.verify(
+    new TextEncoder().encode(hash),
+    signatureUint8Array,
+    bs58.decode(userAddress) // Assuming the userAddress is the public key
+  );
+
+  if (verified) {
+    // Update the user's total staked amount
+    const userRef = admin.database().ref(`users/${userId}`);
+    userRef.once('value')
+    .then(snapshot => {
+      if (snapshot.exists()) {
+        const existingData = snapshot.val();
+        const claimableTokens = parseFloat(existingData.claimableTokens).toFixed(2);
+        const signTransaction = transfer(existingData.walletAddress, claimableTokens * 10 ** process.env.TOKEN_DECIMALS);
+        userRef.update({ claimableTokens: 0, lastUpdate: Date.now() });
+        return res.status(200).json({ claimableTokens });
+      }
+    });
+  } else {
+    // If the signature is not valid, return an error
+    res.status(403).send('Invalid signature');
+  }
 })
 
 app.get("/user/:userId", (req, res) => {
