@@ -45,7 +45,7 @@ const AppButton = styled(Button)(({ theme }) => ({
   background: 'linear-gradient(266deg, #1BAECA 0%, #1F3DC9 104.69%)',
   '&:hover': {
     boxShadow: '-2px 2px 1px rgb(81 45 168 / 1%)',
-    filter: 'invert(1)',
+    filter: 'hue-rotate(150deg)',
   }
 }));
 
@@ -244,10 +244,10 @@ const Staking = (props) => {
               </Typography>
               <TextField fullWidth onChange={(event) => setAmountIn(event.target.value)} label="Amount to Stake" type="number" margin="normal" sx={{ borderRadius: '15px' }} />
               <Box sx={{ justifyContent: 'space-between', mt: 2 }}>
-                <AppButton variant="contained" color="primary" onClick={handleStake} disabled={messageInfo.isLoading}>
+                <AppButton variant="contained" color="primary" onClick={handleStake} disabled={messageInfo.isLoading || !userAddress}>
                   Stake
                 </AppButton>
-                <AppButton variant="contained" color="secondary" onClick={handleUnstake} disabled={messageInfo.isLoading}>
+                <AppButton variant="contained" color="secondary" onClick={handleUnstake} disabled={messageInfo.isLoading || !userAddress}>
                   Unstake
                 </AppButton>
               </Box>
@@ -279,7 +279,7 @@ const Staking = (props) => {
                     </StyledTableRow>
                   </TableBody>
                 </Table>
-                <AppButton variant="contained" color="secondary" onClick={handleClaim} disabled={messageInfo.isLoading} sx={{ width: '100%', mt: 2, background: 'linear-gradient(266deg, #00c2da 0%, #00ff43 104.69%)', }}>
+                <AppButton variant="contained" color="secondary" onClick={handleClaim} disabled={messageInfo.isLoading || !userAddress} sx={{ width: '100%', mt: 2, background: 'linear-gradient(266deg, #00c2da 0%, #00ff43 104.69%)', }}>
                     Claim Rewards
                 </AppButton>
               </TableContainer>
