@@ -70,13 +70,13 @@ app.post('/signup', (req, res) => {
 
 app.post("/stake", async (req, res) => {
     const { singature, amount, userAddress, userId, transactionId } = req.body;
-
+    
     const transaction = await connection.getTransaction(transactionId);
 
-    const sender = await transaction.transaction.message.accountKeys[0].toBase58();
-    const receiver = await transaction.transaction.message.accountKeys[1].toBase58();
-    const transactionToken = await transaction.transaction.message.accountKeys[2].toBase58();
-    const transactionTimestamp = await transaction.blockTime;
+    const sender = transaction.transaction.message.accountKeys[0].toBase58();
+    const receiver = transaction.transaction.message.accountKeys[1].toBase58();
+    const transactionToken = transaction.transaction.message.accountKeys[2].toBase58();
+    const transactionTimestamp = transaction.blockTime;
   
      
     // the age of the transaction must be less than 5 minutes

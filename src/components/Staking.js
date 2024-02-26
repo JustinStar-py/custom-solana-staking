@@ -102,11 +102,13 @@ const Staking = (props) => {
   } , [stakingData]);
 
   useEffect(() => {
-     const interval = setInterval(() => {
-      setStakingDuration(convertSecondsToTime((stakingData.stakingStartDate + 86400000 * stakingPoolData.lockDuration - Date.now()) / 1000));
-    }, 1000);
-
-    return () => clearInterval(interval);
+    if (stakingData) {
+       const interval = setInterval(() => {
+        setStakingDuration(convertSecondsToTime((stakingData.stakingStartDate + 86400000 * stakingPoolData.lockDuration - Date.now()) / 1000));
+      }, 1000);
+  
+      return () => clearInterval(interval);
+    }
   }, [stakingPoolData]);
 
   const getProvider = async () => {
@@ -170,21 +172,22 @@ const Staking = (props) => {
      const signature = await (await axios.get(ENDPOINT + `/get-signature/${userAddress.publicKey}/${amountIn}`)).data.signature;
 
      if (transactionId) {
-      await axios.post(ENDPOINT + '/stake', {
-        singature: signature,
-        amount: amountIn,
-        userAddress: userAddress.publicKey,
-        userId: MD5(userAddress.publicKey).toString(),
-        transactionId : transactionId
-      })
-      .then(response => {
-          console.log(response); // Log the response data
-          setMessageInfo({ isLoading: false, messageText: 'Transaction successful', messageType: 'success' });
-      })
-      .catch(error => {
-          console.error('There was a problem with the axios request:', error);
-          setMessageInfo({ isLoading: false, messageText: 'Transaction failed', messageType: 'error' });
-      });
+      setTimeout(async () => { await axios.post(ENDPOINT + '/stake', {
+          singature: signature,
+          amount: amountIn,
+          userAddress: userAddress.publicKey,
+          userId: MD5(userAddress.publicKey).toString(),
+          transactionId : transactionId
+        })
+        .then(response => {
+            setMessageInfo({ isLoading: false, messageText: 'Transaction successful', messageType: 'success' });
+            setAmountIn(0);
+        })
+        .catch(error => {
+            console.error('There was a problem with the axios request:', error);
+            setMessageInfo({ isLoading: false, messageText: 'Transaction failed', messageType: 'error' });
+        }); 
+     }, 1500);
      } else {
         setMessageInfo({ isLoading: false, messageText: 'Transaction failed', messageType: 'error' });
      }
@@ -218,6 +221,7 @@ const Staking = (props) => {
       userId: MD5(userAddress.publicKey).toString(),
     }).then(response => {
         setMessageInfo({ isLoading: false, messageText: 'Transaction successful', messageType: 'success' });
+        setAmountIn(0);
     }).catch(error => {
         setMessageInfo({ isLoading: false, messageText: `Error: ${error.message.replace('Error: ', '')}`, messageType: 'error' });
     })
