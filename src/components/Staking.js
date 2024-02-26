@@ -1,5 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Paper, Typography, TextField, Button, Grid, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@mui/material';
+import { 
+  Box, Paper, Typography, 
+  TextField, Button, Grid, Table, 
+  TableBody, TableCell, TableContainer, 
+  TableHead, TableRow, Dialog, DialogActions,
+  MenuItem, InputLabel, Select  } from '@mui/material';
 import { createTheme, ThemeProvider, styled } from '@mui/material/styles';
 import * as buffer from 'buffer';
 import { PublicKey, Transaction, Connection, SystemProgram } from '@solana/web3.js';
@@ -72,8 +77,8 @@ const Staking = (props) => {
   // State and logic would be added here
   const { userAddress, walletProvider, connection, messageInfo, setMessageInfo } = props;
   const [amountIn, setAmountIn] = useState(0);
-  const [sending, setSending] = useState(false);
   const [stakingData, setStakingData] = useState(null);
+  const [stakePool, setStakePool] = useState(1);
 
   useEffect(() => {
     if (userAddress) {
@@ -239,10 +244,27 @@ const Staking = (props) => {
               <Typography variant="h4" gutterBottom component="div" fontWeight={'300'} fontFamily="Newake, DM Sans, Roboto, Helvetica Neue, Helvetica, Arial, sans-serif">
                 Staking
               </Typography>
-              <Typography variant="body1" sx={{ mb: 2 }} fontWeight="medium" fontFamily="Newake, DM Sans, Roboto, Helvetica Neue, Helvetica, Arial, sans-serif">
-                Stake your tokens and earn rewards
-              </Typography>
-              <TextField fullWidth onChange={(event) => setAmountIn(event.target.value)} label="Amount to Stake" type="number" margin="normal" sx={{ borderRadius: '15px' }} />
+              <TextField fullWidth onChange={(event) => setAmountIn(event.target.value)} label="Amount to Stake" type="number" margin="normal" sx={{ '& .MuiOutlinedInput-notchedOutline': { borderRadius: '12px' }}} />
+               {/* show an selecter for choose stake pool */}
+               <Box sx={{ justifyContent: 'space-between' }}>
+                 <Select
+                   labelId="demo-simple-select-label"
+                   id="demo-simple-select"
+                   value={stakePool}
+                   label="Pool"
+                   onChange={(event) => setStakePool(event.target.value)}
+                   disabled={messageInfo.isLoading || !userAddress || !amountIn}
+                   sx={{width:'100%', fontFamily: 'DM Sans, Roboto, Helvetica Neue, Helvetica, Arial, sans-serif', fontWeight: '800',
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        borderRadius: '12px'
+                      }
+                  }}
+                 >
+                   <MenuItem value={1}>Pool 1</MenuItem>
+                   <MenuItem value={2}>Pool 2</MenuItem>
+                   <MenuItem value={3}>Pool 3</MenuItem>
+                 </Select>
+             </Box>
               <Box sx={{ justifyContent: 'space-between', mt: 2 }}>
                 <AppButton variant="contained" color="primary" onClick={handleStake} disabled={messageInfo.isLoading || !userAddress}>
                   Stake
@@ -279,10 +301,12 @@ const Staking = (props) => {
                     </StyledTableRow>
                   </TableBody>
                 </Table>
-                <AppButton variant="contained" color="secondary" onClick={handleClaim} disabled={messageInfo.isLoading || !userAddress} sx={{ width: '100%', mt: 2, background: 'linear-gradient(266deg, #00c2da 0%, #00ff43 104.69%)', }}>
-                    Claim Rewards
-                </AppButton>
               </TableContainer>
+                 {stakingData && stakingData.claimableTokens >= 10 &&
+                   <AppButton variant="contained" color="secondary" onClick={handleClaim} disabled={messageInfo.isLoading || !userAddress} sx={{ width: '100%', mt: 2, background: 'linear-gradient(266deg, #00c2da 0%, #00ff43 104.69%)', }}>
+                     Claim Rewards
+                   </AppButton>
+                 }
             </StyledPaper>
           </Grid>
         </Grid>

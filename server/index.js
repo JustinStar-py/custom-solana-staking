@@ -24,23 +24,15 @@ admin.initializeApp({
 });
 
 const db = admin.database();
+const pools = {
+  1: { apy: 700, lockDuration: 1 },
+  2: { apy: 1000, lockDuration: 3 },
+  3: { apy: 1200, lockDuration: 7 },
+};
 
 // Sign up a new user
 app.post('/signup', (req, res) => {
     const { walletAddress, userId, pool } = req.body;
-    let stakingPool = {};
-    
-    switch (pool) {
-      case 1:
-        stakingPool = { apy: 10, lockDuration: 1 };
-        break;
-      case 2:
-        stakingPool = { apy: 35, lockDuration: 3 };
-        break;
-      case 3:
-        stakingPool = { apy: 45, lockDuration: 7 };
-        break;
-    }
 
     // Here 'users' is assumed to be the collection where user data is being stored.
     const userRef = admin.database().ref(`users/${userId}`);
@@ -54,7 +46,7 @@ app.post('/signup', (req, res) => {
           userRef.set({ 
             userId: userId, 
             walletAddress: walletAddress,
-            stakingPool: stakingPool,
+            stakingPool: pools[pool],
             totalStaked: 0,
             claimableTokens: 0,
             stakingStartDate: 0,
@@ -245,6 +237,27 @@ app.get("/get-signature/:userAddress/:amount", async (req, res) => {
 
   return res.status(200).json({ signature });
 });
+
+app.get("/get-pool/:userId", (req, res) => {
+  const { userId } = req.params;
+  const userRef = admin.database().ref(`users/${userId}`);
+  userRef.once('value')
+  .then(snapshot => {
+    if (snapshot.exists()) {
+      const stakingPool = snapshot.val().stakingPool;
+      return res.status(200).json({ stakingPool });
+    } else {
+      return res.status(404).json({ error: "User not found" });
+    }
+  })
+  .catch(error => {
+    return res.status(500).json({ error: error.message });
+  });
+})
+
+app.get("/get-pools", (req, res) => {
+  return res.status(200).json({ pools });
+})
 
 app.listen(PORT, () => {
     console.log(`Server listening on ${PORT}`);
