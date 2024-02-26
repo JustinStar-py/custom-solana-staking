@@ -46,7 +46,7 @@ app.post('/signup', (req, res) => {
           userRef.set({ 
             userId: userId, 
             walletAddress: walletAddress,
-            stakingPool: pools[pool],
+            stakingPool: { Id: pool, ...pools[pool] },
             totalStaked: 0,
             claimableTokens: 0,
             stakingStartDate: 0,
@@ -245,7 +245,7 @@ app.get("/get-pool/:userId", (req, res) => {
   .then(snapshot => {
     if (snapshot.exists()) {
       const stakingPool = snapshot.val().stakingPool;
-      return res.status(200).json({ stakingPool });
+      return res.status(200).json({ ...stakingPool });
     } else {
       return res.status(404).json({ error: "User not found" });
     }

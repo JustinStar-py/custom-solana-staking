@@ -4,7 +4,7 @@ import {
   TextField, Button, Grid, Table, 
   TableBody, TableCell, TableContainer, 
   TableHead, TableRow, Dialog, DialogActions,
-  MenuItem, InputLabel, Select  } from '@mui/material';
+  MenuItem, InputLabel, Select, Divider, Chip  } from '@mui/material';
 import { createTheme, ThemeProvider, styled } from '@mui/material/styles';
 import * as buffer from 'buffer';
 import { PublicKey, Transaction, Connection, SystemProgram } from '@solana/web3.js';
@@ -79,6 +79,8 @@ const Staking = (props) => {
   const [amountIn, setAmountIn] = useState(0);
   const [stakingData, setStakingData] = useState(null);
   const [stakePool, setStakePool] = useState(1);
+  const [stakingPoolData, setStakingPoolData] = useState(null);
+  const [stakingDuration, setStakingDuration] = useState(0);
 
   useEffect(() => {
     if (userAddress) {
@@ -89,6 +91,23 @@ const Staking = (props) => {
       })
     }
   } , [userAddress, messageInfo]);
+
+  useEffect(() => {
+    if (stakingData && stakingData.totalStaked > 0) {
+      axios.get(ENDPOINT + '/get-pool/' + MD5(userAddress.publicKey).toString())
+      .then(response => {
+          setStakingPoolData(response.data);
+      })
+    }
+  } , [stakingData]);
+
+  useEffect(() => {
+     const interval = setInterval(() => {
+      setStakingDuration(convertSecondsToTime((stakingData.stakingStartDate + 86400000 * stakingPoolData.lockDuration - Date.now()) / 1000));
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [stakingPoolData]);
 
   const getProvider = async () => {
     if ("solana" in window) {
@@ -235,6 +254,13 @@ const Staking = (props) => {
         setMessageInfo({ isLoading: false, messageText: 'Transaction failed', messageType: 'error' });
     })
   }
+  
+  const convertSecondsToTime = (seconds) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const remainingSeconds = parseInt(seconds % 60);
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+  }
 
   return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', overflow: 'auto' }}>
@@ -278,7 +304,6 @@ const Staking = (props) => {
               </Typography>
             </StyledPaper>
           </Grid>
-
           <Grid item xs={12} md={6} lg={4} flexBasis={'85%'}>
             <StyledPaper>
               <Typography variant="h4" gutterBottom component="div" fontWeight={300} fontFamily={'Newake, DM Sans, Roboto, Helvetica Neue, Helvetica, Arial, sans-serif'}>
@@ -298,6 +323,28 @@ const Staking = (props) => {
                       <StyledTableCell>$Wagmi</StyledTableCell>
                       <StyledTableCell align="right">{stakingData? parseFloat(stakingData.totalStaked).toFixed(2) : 'loading'}</StyledTableCell>
                       <StyledTableCell align="right">{stakingData? parseFloat(stakingData.claimableTokens).toFixed(2) : 'loading'}</StyledTableCell>
+                    </StyledTableRow>
+                  </TableBody>
+                </Table>
+              </TableContainer>
+              {/* write an line here */}
+              <Divider sx={{ my: 1 }}>
+                <Chip label="Pool Info" size="small" sx={{ color: '#fff', background: 'linear-gradient(266deg, #1BAECA 0%, #1F3DC9 104.69%)' }} />
+              </Divider>
+              <TableContainer component={Box} sx={{ mt: 1 }}>
+                <Table aria-label="staking info table">
+                  <TableHead>
+                    <StyledTableRow>
+                      <StyledTableCell>Pool ID</StyledTableCell>
+                      <StyledTableCell align="right">APY</StyledTableCell>
+                      <StyledTableCell align="right">Lock Duration</StyledTableCell>
+                    </StyledTableRow>
+                  </TableHead>
+                  <TableBody>
+                    <StyledTableRow>
+                      <StyledTableCell>{stakingPoolData? stakingPoolData.Id : 0}</StyledTableCell>
+                      <StyledTableCell align="right">{stakingPoolData? stakingPoolData.apy : 0}</StyledTableCell>
+                      <StyledTableCell align="right">{stakingPoolData?  stakingDuration : '00/00'}</StyledTableCell>
                     </StyledTableRow>
                   </TableBody>
                 </Table>
