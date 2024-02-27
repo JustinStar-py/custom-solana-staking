@@ -6,7 +6,10 @@ const cors = require("cors");
 const crypto = require("crypto");
 const nacl = require('tweetnacl');
 const bs58 = require('bs58');
-const { transfer, makeSHA256, connection, usersRandomHashCode } = require('./cryptoOperations-sol');
+const { 
+   transfer, makeSHA256, 
+   getTokenAccountAddress, getTransactionInfo,
+   connection, usersRandomHashCode,  } = require('./cryptoOperations-sol');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -71,22 +74,21 @@ app.post('/signup', (req, res) => {
 app.post("/stake", async (req, res) => {
     const { singature, amount, userAddress, userId, transactionId } = req.body;
     
-    const transaction = await connection.getTransaction(transactionId);
-
-    const sender = transaction.transaction.message.accountKeys[0].toBase58();
-    const receiver = transaction.transaction.message.accountKeys[1].toBase58();
-    const transactionToken = transaction.transaction.message.accountKeys[2].toBase58();
-    const transactionTimestamp = transaction.blockTime;
+    const { sender, receiver, transactionToken, transactionTimestamp, tokenAmount} = await getTransactionInfo(transactionId);
+    const tokenAccountAddress = await getTokenAccountAddress(userAddress);
   
      
-    // the age of the transaction must be less than 5 minutes
     if (Date.now() / 1000 - transactionTimestamp > 2 * 60) {
       return res.status(400).json({ error: 'Transaction too old' });
     }
 
-    // if (transactionToken !== process.env.TOKEN) {
-    //   return res.status(400).json({ error: 'Invalid transaction' });
-    // }
+    if (tokenAmount !== amount) {
+      return res.status(400).json({ error: 'Invalid transaction' });
+    }
+
+    if (transactionToken !== tokenAccountAddress) {
+      return res.status(400).json({ error: 'Invalid transaction' });
+    }
 
     if (sender !== userAddress) {
       return res.status(400).json({ error: 'Invalid transaction' });
@@ -108,14 +110,18 @@ app.post("/stake", async (req, res) => {
           if (snapshot.exists()) {
              const existingData = snapshot.val();
              const totalStaked = Number(existingData.totalStaked) + Number(amount);
-             if (snapshot.val().stakingStartDate === 0) {
-               const stakingStartDate = Date.now();
-               userRef.update({ stakingStartDate, stakingDuration: snapshot.val().stakingPool.lockDuration, lastUpdate: Date.now() });
-             }
-             userRef.update({ totalStaked, lastUpdate: Date.now() });
-             return res.status(200).json({ totalStaked });
-            }
-          });
+             const stakingStartDate = Date.now();
+               userRef.update({ 
+                 stakingStartDate, 
+                 totalStaked, 
+                 lastUpdate: Date.now(), 
+                 stakingDuration: snapshot.val().stakingPool.lockDuration
+              });
+            return res.status(200).json({ totalStaked });
+        } else {
+            return res.status(404).json({ error: "User not found" });
+        }}
+      );
     }
 });
 

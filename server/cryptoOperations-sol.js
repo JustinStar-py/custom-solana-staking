@@ -51,4 +51,41 @@ async function makeSHA256(data) {
   return crypto.createHash('sha256').update(data).digest('hex');
 }
 
-module.exports = { transfer, makeSHA256, connection, usersRandomHashCode };
+async function getTokenAccountAddress(address) {
+  const encodedSecret = process.env.PRIVATE_KEY;
+  const secretKey = bs58.decode(encodedSecret);
+  const payerKeypair = Keypair.fromSecretKey(secretKey);
+
+  const mintPubkey = new PublicKey(process.env.TOKEN);
+  const receiverPublicKey = new PublicKey(address);
+
+  const toTokenAccount = await getOrCreateAssociatedTokenAccount(connection, payerKeypair, mintPubkey, receiverPublicKey);
+
+  return toTokenAccount.address.toString();
+}
+
+async function getTransactionInfo(transactionHash) {
+  try {
+      // Fetch transaction details
+      const transaction = await connection.getTransaction(transactionHash);
+
+      // Parse transaction instructions
+      const instructions = transaction.transaction.message.instructions;
+
+      // Print transaction details
+      const sender = transaction.transaction.message.accountKeys[0].toBase58();
+      const receiver = transaction.transaction.message.accountKeys[1].toBase58();
+      const transactionToken = transaction.transaction.message.accountKeys[2].toBase58();
+      const transactionTimestamp = transaction.blockTime;
+      const tokenAmount = transaction.meta.preTokenBalances[1].uiTokenAmount.uiAmount - transaction.meta.postTokenBalances[1].uiTokenAmount.uiAmount;
+      
+      return { sender, receiver, transactionToken, transactionTimestamp, tokenAmount };
+    } catch (error) {
+      console.error("Error fetching transaction details:", error);
+  }
+}
+
+module.exports = { 
+   transfer, getTokenAccountAddress, getTransactionInfo, 
+   makeSHA256, connection, usersRandomHashCode 
+};
