@@ -81,6 +81,7 @@ const Staking = (props) => {
   const [stakePool, setStakePool] = useState(1);
   const [stakingPoolData, setStakingPoolData] = useState(null);
   const [stakingDuration, setStakingDuration] = useState(0);
+  const [poolsInfo, setPoolsInfo] = useState(null);
 
   useEffect(() => {
     if (userAddress) {
@@ -110,6 +111,15 @@ const Staking = (props) => {
       return () => clearInterval(interval);
     }
   }, [stakingPoolData]);
+
+  useEffect(() => {
+    if (stakePool) {
+      axios.get(ENDPOINT + '/get-pools/')
+      .then(response => {
+          setPoolsInfo(response.data);
+      })
+    }
+  }, [stakePool])
 
   const getProvider = async () => {
     if ("solana" in window) {
@@ -258,6 +268,11 @@ const Staking = (props) => {
         setMessageInfo({ isLoading: false, messageText: 'Transaction failed', messageType: 'error' });
     })
   }
+
+  const showPoolInfo = (poolId) => {
+     setMessageInfo({ isLoading: false, messageText: `APY : ${poolsInfo.pools[poolId].apy}% and Token Lock Duration : ${poolsInfo.pools[poolId].lockDuration} Days`, messageType: 'info', boxType: 'info' });
+     setStakePool(poolId);
+  }
   
   const convertSecondsToTime = (seconds) => {
     const hours = Math.floor(seconds / 3600);
@@ -282,7 +297,7 @@ const Staking = (props) => {
                    id="demo-simple-select"
                    value={stakePool}
                    label="Pool"
-                   onChange={(event) => setStakePool(event.target.value)}
+                   onChange={(event) => showPoolInfo(event.target.value)}
                    disabled={messageInfo.isLoading || !userAddress || !amountIn}
                    sx={{width:'100%', fontFamily: 'DM Sans, Roboto, Helvetica Neue, Helvetica, Arial, sans-serif', fontWeight: '800',
                       '& .MuiOutlinedInput-notchedOutline': {
@@ -347,8 +362,8 @@ const Staking = (props) => {
                   <TableBody>
                     <StyledTableRow>
                       <StyledTableCell>{stakingPoolData? stakingPoolData.Id : 0}</StyledTableCell>
-                      <StyledTableCell align="right">{stakingPoolData? stakingPoolData.apy : 0}</StyledTableCell>
-                      <StyledTableCell align="right">{stakingPoolData?  stakingDuration : '00/00'}</StyledTableCell>
+                      <StyledTableCell align="right">{stakingPoolData? stakingPoolData.apy : 0}%</StyledTableCell>
+                      <StyledTableCell align="right">{stakingPoolData?  stakingDuration : '00:00'}</StyledTableCell>
                     </StyledTableRow>
                   </TableBody>
                 </Table>

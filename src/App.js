@@ -17,6 +17,7 @@ function App() {
     messageText: null,
     messageType: null, // default to 'success', 'error', 'loading'
     isLoading: false,
+    boxType: 'transaction'
   });
 
   useEffect(() => {

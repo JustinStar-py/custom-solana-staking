@@ -12,7 +12,7 @@ const MessageBox = ({ messageInfo, setMessageInfo }) => {
 
     if (messageInfo.messageType !== 'loading' && !messageInfo.isLoading) {
       timer = setTimeout(() => {
-        setMessageInfo({ ...messageInfo, messageType: null });
+        setMessageInfo({ ...messageInfo, messageType: null, boxType: 'transaction' });
       }, 4000); // 4 seconds delay
     }
     return () => clearTimeout(timer);
@@ -30,7 +30,7 @@ const MessageBox = ({ messageInfo, setMessageInfo }) => {
     <Snackbar
       anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
       open={open}
-      autoHideDuration={messageInfo.messageType === 'loading' ? null : 3500}
+      autoHideDuration={messageInfo.boxType === 'info' ? 5000 : messageInfo.messageType === 'loading' ? null : 3500}
       onClose={handleClose}
     >
       <Alert
@@ -40,7 +40,7 @@ const MessageBox = ({ messageInfo, setMessageInfo }) => {
           width: 'fit-content',
           borderRadius: '12px',
           fontFamily: 'Newake',
-          fontSize: '18px',
+          fontSize: messageInfo.boxType === 'info' ? '15px' : '19px',
           backgroundColor: messageInfo.messageType === 'loading' ? 'transparent' : undefined,
           boxShadow: messageInfo.messageType === 'loading' ? 'none' : undefined,
           width: '23vw',
