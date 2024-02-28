@@ -150,9 +150,13 @@ app.post("/unstake", async (req, res) => {
       if (snapshot.exists()) {
         const existingData = snapshot.val();
         const totalStaked = Number(existingData.totalStaked) - Number(amount);
-        const signTransaction = transfer(existingData.walletAddress, Number(amount) * 10 ** process.env.TOKEN_DECIMALS);
-        userRef.update({ totalStaked, lastUpdate: Date.now() });
-        return res.status(200).json({ totalStaked });
+        if (totalStaked < 0) {
+          return res.status(400).json({ error: "Insufficient staked amount" });
+        } else {
+          const signTransaction = transfer(existingData.walletAddress, Number(amount) * 10 ** process.env.TOKEN_DECIMALS);
+          userRef.update({ totalStaked, lastUpdate: Date.now() });
+          return res.status(200).json({ totalStaked });
+        }
       }
     });
   } else {
@@ -186,9 +190,13 @@ app.post("/claim", async (req, res) => {
       if (snapshot.exists()) {
         const existingData = snapshot.val();
         const claimableTokens = parseFloat(existingData.claimableTokens).toFixed(2);
-        const signTransaction = transfer(existingData.walletAddress, claimableTokens * 10 ** process.env.TOKEN_DECIMALS);
-        userRef.update({ claimableTokens: 0, lastUpdate: Date.now() });
-        return res.status(200).json({ claimableTokens });
+        if (claimableTokens < 0) {
+            return res.status(400).json({ error: "Insufficient staked amount" });
+        } else {
+            const signTransaction = transfer(existingData.walletAddress, claimableTokens * 10 ** process.env.TOKEN_DECIMALS);
+            userRef.update({ claimableTokens: 0, lastUpdate: Date.now() });
+            return res.status(200).json({ claimableTokens });
+        }
       }
     });
   } else {

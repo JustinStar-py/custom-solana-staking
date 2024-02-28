@@ -194,8 +194,8 @@ const Staking = (props) => {
             setAmountIn(0);
         })
         .catch(error => {
-            console.error('There was a problem with the axios request:', error);
-            setMessageInfo({ isLoading: false, messageText: 'Transaction failed', messageType: 'error' });
+            const messageError = error.response.data.error || error.message.replace('Error: ', '') || 'Transaction failed';
+            setMessageInfo({ isLoading: false, messageText: `Error: ${messageError}`, messageType: 'error' });
         }); 
      }, 1500);
      } else {
@@ -205,7 +205,7 @@ const Staking = (props) => {
   }
 
   const handleUnstake = async () => {
-    setMessageInfo({ isLoading: true, messageText: 'Processing unstake transaction...', messageType: 'loading'});
+    setMessageInfo({ isLoading: true, messageText: 'Processing transaction...', messageType: 'loading'});
     const message = await (await axios.get(ENDPOINT + `/get-signature/${userAddress.publicKey}/${amountIn}`)).data.signature;
     const encodedMessage = new TextEncoder().encode(message);
     let signedMessage = null;
@@ -233,7 +233,10 @@ const Staking = (props) => {
         setMessageInfo({ isLoading: false, messageText: 'Transaction successful', messageType: 'success' });
         setAmountIn(0);
     }).catch(error => {
-        setMessageInfo({ isLoading: false, messageText: `Error: ${error.message.replace('Error: ', '')}`, messageType: 'error' });
+        const messageError = error.response.data.error || error.message.replace('Error: ', '') || 'Transaction failed';
+        setMessageInfo({ isLoading: false, messageText: `Error: ${messageError}`, messageType: 'error' });
+    }).finally(() => {
+        setAmountIn(0);
     })
   }
 
@@ -265,7 +268,8 @@ const Staking = (props) => {
     }).then(response => {
         setMessageInfo({ isLoading: false, messageText: 'Transaction successful', messageType: 'success' });
     }).catch(error => {
-        setMessageInfo({ isLoading: false, messageText: 'Transaction failed', messageType: 'error' });
+       const messageError = error.response.data.error || error.message.replace('Error: ', '') || 'Transaction failed';
+       setMessageInfo({ isLoading: false, messageText: `Error: ${messageError}`, messageType: 'error' });
     })
   }
 
@@ -278,6 +282,19 @@ const Staking = (props) => {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     const remainingSeconds = parseInt(seconds % 60);
+
+    if (hours === 0) {
+      return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+    }
+
+    if (hours === 0 && minutes === 0) {
+      return `${remainingSeconds.toString().padStart(2, '0')}`;
+    }
+
+    if (hours < 0 || minutes < 0 || remainingSeconds < 0) {
+      return 'unlocked 🔓';
+    }
+
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
   }
 
