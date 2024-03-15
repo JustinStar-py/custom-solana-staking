@@ -331,7 +331,7 @@ const Staking = (props) => {
                 <AppButton variant="contained" color="primary" onClick={handleStake} disabled={messageInfo.isLoading || !userAddress}>
                   Stake
                 </AppButton>
-                <AppButton variant="contained" color="secondary" onClick={handleUnstake} disabled={messageInfo.isLoading || !userAddress}>
+                <AppButton variant="contained" color="secondary" onClick={handleUnstake} disabled={messageInfo.isLoading || !userAddress || stakingDuration !== 'unlocked 🔓'}>
                   Unstake
                 </AppButton>
               </Box>
