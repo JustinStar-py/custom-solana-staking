@@ -82,20 +82,20 @@ app.post("/stake", async (req, res) => {
       return res.status(400).json({ error: 'Transaction too old' });
     }
 
-    if (tokenAmount !== amount) {
-      return res.status(400).json({ error: 'Invalid transaction' });
+    if (tokenAmount !== Number(amount)) {
+      return res.status(400).json({ error: 'Transaction amount mismatch' });
     }
 
     if (transactionToken !== tokenAccountAddress) {
-      return res.status(400).json({ error: 'Invalid transaction' });
+      return res.status(400).json({ error: 'Transaction token mismatch' });
     }
 
     if (sender !== userAddress) {
-      return res.status(400).json({ error: 'Invalid transaction' });
+      return res.status(400).json({ error: 'Transaction sender mismatch' });
     }
 
     if (receiver !== process.env.FROM_TOKEN_ACCOUNT_ADDRESS) {
-      return res.status(400).json({ error: 'Invalid transaction' });
+      return res.status(400).json({ error: 'Transaction receiver mismatch' });
     }
 
     // Concatenate the user address, amount, and secret and then hash it
